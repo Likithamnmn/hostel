@@ -3,11 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "main": "src/server.js",
-  
   "scripts": {
-  "dev": "nodemon src/server.js"
-}
-,
+    "dev": "nodemon src/server.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -36,6 +34,7 @@
     "async-function": "^1.0.0",
     "available-typed-arrays": "^1.0.7",
     "balanced-match": "^1.0.2",
+    "bcryptjs": "^3.0.2",
     "brace-expansion": "^1.1.12",
     "call-bind": "^1.0.8",
     "call-bind-apply-helpers": "^1.0.2",
@@ -55,7 +54,7 @@
     "define-data-property": "^1.1.4",
     "define-properties": "^1.2.1",
     "doctrine": "^2.1.0",
-    "dotenv": "^17.2.0",
+    "dotenv": "^17.2.1",
     "dunder-proto": "^1.0.1",
     "es-abstract": "^1.24.0",
     "es-define-property": "^1.0.1",
