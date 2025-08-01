@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import userRoutes from './routes/userRoutes.js';
-import User from './models/User.js';        
+import User from './models/User.model.js';
 import studentRoutes from './routes/studentRoutes.js';
 
 

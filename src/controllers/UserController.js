@@ -1,4 +1,4 @@
-import User from '../models/User.js';
+import User from '../models/User.model.js';
 import { hashPassword } from '../utils/hashPassword.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -65,7 +65,7 @@ const login = async (req, res) => {
 
       res.json({ token }
     );
-    
+
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
