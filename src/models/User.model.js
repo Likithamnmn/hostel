@@ -1,54 +1,28 @@
 import mongoose from 'mongoose';
-const Schema = mongoose.Schema;
 
-const userSchema = new Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true
-    },
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
     email: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        lowercase: true
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
     },
-    password: {
-        type: String,
-        required: true
-    },
+    gender: { type: String, required: true },
     role: {
-        type: String,
-        enum: ['student', 'admin', 'warden'],
-        required: true
+      type: String,
+      enum: ['student', 'warden', 'admin'],
+      default: 'student',
     },
-    gender: {
-        type: String,
-        enum: ['male', 'female'],
-        required: true
-    },
-    accountStatus: {
-        type: String,
-        enum: ['pending_verification', 'active', 'suspended'],
-        default: 'pending_verification'
-    },
-    profilePicture: {
-        type: String,
-        default: ''
-    },
-    hostelId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Hostel', default: null
-    },
-    roomId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Room',
-        default: null
-    }
-}, {
-    timestamps: true
-});
+    password: { type: String, required: true },
+    isApproved: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
 
-const User = mongoose.model('User', userSchema);
-export default User;
+// 🔥 Optional: Create indexes cleanly (use only after dropping old ones)
+userSchema.index({ email: 1 }, { unique: true });
+
+export default mongoose.model('User', userSchema);

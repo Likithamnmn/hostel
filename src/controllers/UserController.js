@@ -4,11 +4,12 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 export const register = async (req, res) => {
+  console.log("🚀 Incoming payload:", req.body);
   try {
-    const { name, username, gender, role, password } = req.body;
+    const { name, email, gender, role, password } = req.body;
 
-    // Basic validation
-    if (!name || !username || !gender || !password) {
+    // Validation
+    if (!name || !email || !gender || !password) {
       return res.status(400).json({ error: 'All fields are required.' });
     }
 
@@ -16,19 +17,17 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: 'Password too weak. Must be at least 8 characters.' });
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ username });
+    // Check for existing user
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ error: 'Username already taken.' });
+      return res.status(409).json({ error: 'Email already registered.' });
     }
 
-    // Hash password
     const hashed = await hashPassword(password);
 
-    // Create new user
     const user = new User({
       name,
-      username,
+      email,
       gender,
       role: role || 'Student',
       password: hashed,
@@ -47,25 +46,19 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Find user by email
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' }
-      );
-       const token = jwt.sign(
+    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+
+    const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-
-      res.json({ token }
-    );
-
+    res.json({ token });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -74,15 +67,17 @@ const login = async (req, res) => {
 export { login };
 
 export const getProfile = async (req, res) => {
-  res.json({ message: `Welcome, user ${req.user.id}`,userId: req.user.id,
-    role: req.user.role, });
+  res.json({
+    message: `Welcome, user ${req.user.id}`,
+    userId: req.user.id,
+    role: req.user.role,
+  });
 };
 
 export const approveStudentController = async (req, res) => {
   try {
     const { studentId } = req.body;
 
-    // Example MongoDB update assuming students are in the User model with a role
     await User.findByIdAndUpdate(studentId, { isApproved: true });
 
     res.status(200).json({ message: 'Student approved successfully' });
@@ -90,4 +85,3 @@ export const approveStudentController = async (req, res) => {
     res.status(500).json({ error: 'Failed to approve student' });
   }
 };
-
