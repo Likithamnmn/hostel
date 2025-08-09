@@ -2,9 +2,10 @@
 import express from 'express';
 import { getProfile } from '../controllers/UserController.js';
 import { checkAuth, authorizeRoles } from '../middleware/authMiddleware.js';
-import { isAdmin } from '../middleware/isAdmin.js';
+import { isAdminOrWarden } from '../middleware/isAdmin.js';
 import { isGender } from '../middleware/isGender.js';
-
+import { getAllUsers, getUserById , updateUser, deleteUser} from '../controllers/UserController.js';
+import { createHostel, getAllHostels, getHostelById } from '../controllers/HostelController.js';
 const router = express.Router();
 
 router.get('/me', checkAuth, getProfile);
@@ -29,4 +30,13 @@ router.get('/boys-hostel', checkAuth, isGender('male'), (req, res) => {
 router.get('/female-zone',checkAuth, isGender('female'), (req, res) => {
   res.send('Welcome Female User');
 });
+// Only admins can access these
+router.get('/', checkAuth, authorizeRoles('admin'), getAllUsers);
+router.get('/:id', checkAuth, authorizeRoles('admin'), getUserById);
+router.put('/:id',checkAuth, isAdminOrWarden, updateUser);
+router.delete('/:id', checkAuth,isAdminOrWarden, deleteUser);
+router.post('/',checkAuth, isAdminOrWarden, createHostel);
+router.get('/', checkAuth, getAllHostels);
+router.get('/:id', checkAuth, getHostelById);
+
 export default router;
