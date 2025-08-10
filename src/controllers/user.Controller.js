@@ -47,11 +47,27 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+    }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+    console.log('User found:', user);
 
+    let isMatch = false;
+
+    try {
+      isMatch = await bcrypt.compare(password, user.password);
+    } catch (err) {
+      console.error('Bcrypt compare error:', err);
+      return res.status(500).json({ message: 'Encryption error' });
+    }
+
+    // 3. Now this check works correctly
+    if (!isMatch) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // 4. The rest of your code will now execute
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -59,11 +75,13 @@ const login = async (req, res) => {
     );
 
     res.json({ token });
+
   } catch (error) {
+    // This will catch any other unexpected errors
+    console.error("Login function error:", error);
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 export { login };
 
 export const getProfile = async (req, res) => {
