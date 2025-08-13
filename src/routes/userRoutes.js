@@ -1,17 +1,17 @@
 import express from 'express';
-import { 
-  getProfile, 
-  getAllUsers, 
-  getUserById, 
-  updateUser, 
-  deleteUser 
+import {
+  getProfile,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser
 } from '../controllers/UserController.js';
 
-import { 
-  createHostel, 
-  getAllHostels, 
-  getHostelById 
-} from '../controllers/HostelController.js';
+import {
+  createHostel,
+  getAllHostels,
+  getHostelById
+} from '../controllers/hostel.Controller.js';
 
 import { checkAuth, authorizeRoles } from '../middleware/authMiddleware.js';
 import { isGender } from '../middleware/isGender.js';
