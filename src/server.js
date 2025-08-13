@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import userRoutes from './routes/userRoutes.js';
+import hostelRoutes from './routes/hostelRoutes.js';
 import User from './models/User.model.js';
 import studentRoutes from './routes/studentRoutes.js';
 import authRoutes from './routes/authRoutes.js';
@@ -15,9 +16,10 @@ connectDB();
 
 app.use('/api/users', userRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/hostels', hostelRoutes);
 
 
-app.use('/auth', authRoutes); 
+app.use('/auth', authRoutes);
 
 // ✅ Optional basic route
 app.get('/', (req, res) => {

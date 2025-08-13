@@ -12,6 +12,11 @@ const hostelSchema = new Schema({
         type: String,
         enum: ['boys', 'girls'],
         required: true
+    },
+    capacity: {
+        type: Number,
+        required: true,
+        min: 1
     }
 }, { timestamps: true });
 
