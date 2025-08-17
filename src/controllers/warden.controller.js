@@ -1,5 +1,63 @@
 import User from '../models/User.model.js';
 import { hashPassword } from '../utils/hashPassword.js';
+import { protect, authorize } from '../middleware/authMiddleware.js';
+// src/controllers/warden.controller.js
+import StudentRequest from "../models/StudentRequest.model.js";
+
+// Approve request
+export const approveRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+
+    const request = await StudentRequest.findById(requestId);
+    if (!request) return res.status(404).json({ message: "Request not found" });
+
+    if (!request.forwardedByAdmin) {
+      return res.status(403).json({ message: "Request not forwarded by admin" });
+    }
+
+    request.status = "approved";
+    await request.save();
+
+    res.status(200).json({ message: "Request approved by warden", request });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Reject request
+export const rejectRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+
+    const request = await StudentRequest.findById(requestId);
+    if (!request) return res.status(404).json({ message: "Request not found" });
+
+    if (!request.forwardedByAdmin) {
+      return res.status(403).json({ message: "Request not forwarded by admin" });
+    }
+
+    request.status = "rejected";
+    await request.save();
+
+    res.status(200).json({ message: "Request rejected by warden", request });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// View only forwarded requests
+export const getForwardedRequests = async (req, res) => {
+  try {
+    const requests = await StudentRequest.find({ forwardedByAdmin: true, status: "pending" })
+      .populate("student", "name email");
+
+    res.status(200).json(requests);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 //Create a new user account (student or admin). Only Wardens can do this.
 //The request body will contain the new user's details.
@@ -48,3 +106,5 @@ export const createUser = async (req, res) => {
         res.status(500).json({ error: 'Server error while creating user.' });
     }
 };
+
+

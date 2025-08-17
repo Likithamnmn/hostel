@@ -1,41 +1,37 @@
-import jwt from 'jsonwebtoken';
-import User from '../models/User.model.js';
+import jwt from "jsonwebtoken";
+import User from "../models/User.model.js";
 
-const checkAuth = (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
+// Protect routes
+export const checkAuth = async (req, res, next) => {
+  let token;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Not authorized, no token provided.' });
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    try {
+      token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      req.user = await User.findById(decoded.id).select("-password");
+      if (!req.user) return res.status(401).json({ message: "User not found" });
+
+      next();
+    } catch (error) {
+      return res.status(401).json({ message: "Not authorized, token failed" });
     }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Attach user id, role, and gender to the request object
-    req.user = { id: decoded.id, role: decoded.role, gender: decoded.gender };
-    next();
-  } catch (error) {
-    res.status(401).json({ message: 'Token is invalid or has expired.' });
   }
+
+  if (!token) return res.status(401).json({ message: "Not authorized, no token" });
 };
 
-// This function restricts access to a route to specific roles and contains the codes of the autorizeRoles file
-const authorizeRoles = (...roles) => {
+// Role-based access
+export const authorizeRoles = (...roles) => {
   return (req, res, next) => {
-    // req.user should be populated by the checkAuth middleware
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Access denied. You do not have the required role.' });
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Forbidden: insufficient role" });
     }
     next();
   };
 };
-export const adminOnly = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
-    next();
-  } else {
-    res.status(403).json({ message: 'Access forbidden: Admins only' });
-  }
-};
 
-export { checkAuth, authorizeRoles };
+// ✅ Aliases for backward compatibility
+export const protect = checkAuth;
+export const authorize = authorizeRoles;

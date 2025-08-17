@@ -1,39 +1,80 @@
-import PrivateMessage from '../models/PrivateMessage.model.js';
-import User from '../models/User.model.js';
 
-// send a private message to a warden to confirm a student's fee payment (the admin specific routes only)
-export const sendPaymentConfirmation = async (req, res) => {
-    try {
-        const { wardenId, studentName, studentEmail, messageBody } = req.body;
-        const adminId = req.user.id; // the admin (logged in)
+import StudentRequest from "../models/StudentRequest.model.js";
 
-        if (!wardenId || !studentName || !studentEmail || !messageBody) {
-            return res.status(400).json({ error: 'Warden ID, student details, and message body are required.' });
-        }
+// Admin creates or receives a student request (ex: payment or admission request)
+export const createStudentRequest = async (req, res) => {
+  try {
+    const { studentId, type, details } = req.body;
 
-        // verify the recipient is warden (other way around)
-        const warden = await User.findById(wardenId);
-        if (!warden || warden.role !== 'warden') {
-            return res.status(404).json({ error: 'Warden not found.' });
-        }
+    const newRequest = await StudentRequest.create({
+      student: studentId,
+      type,
+      details,
+      status: "pending",
+      forwardedByAdmin: false,
+    });
 
-        //private message thread
-        const message = new PrivateMessage({
-            sender: adminId,
-            recipient: wardenId,
-            body: messageBody,
-            relatedStudentInfo: {
-                name: studentName,
-                email: studentEmail,
-            }
-        });
-
-        await message.save();
-
-        res.status(201).json({ message: 'Payment confirmation sent to the warden successfully.' });
-
-    } catch (error) {
-        console.error('Send Confirmation Error:', error);
-        res.status(500).json({ error: 'Server error while sending confirmation.' });
-    }
+    res.status(201).json({ message: "Request created", request: newRequest });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
+
+// Admin forwards request to warden
+export const forwardRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+
+    const request = await StudentRequest.findById(requestId);
+    if (!request) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    if (request.forwardedByAdmin) {
+      return res
+        .status(400)
+        .json({ message: "Request already forwarded to warden" });
+    }
+
+    request.forwardedByAdmin = true;
+    await request.save();
+
+    res.status(200).json({ message: "Request forwarded to warden", request });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Admin can view all student requests
+export const getAllRequests = async (req, res) => {
+  try {
+    const requests = await StudentRequest.find().populate("student", "name email");
+    res.status(200).json(requests);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+// Verify payment
+export const verifyPayment = async (req, res) => {
+  try {
+    const request = await Request.findById(req.params.id);
+    if (!request) return res.status(404).json({ message: "Request not found" });
+
+    request.payment = {
+      amount: req.body.amount,
+      verifiedBy: req.user._id,
+      date: new Date()
+    };
+    request.status = "payment_verified";
+    await request.save();
+
+    res.json({ message: "Payment verified", request });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Forward request to Warden
+
