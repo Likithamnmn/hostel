@@ -1,4 +1,4 @@
-import Hostel from '../models/Hostel.model.js';
+import Hostel from '../models/hostel.model.js';
 import { QueryFeatures } from '../utils/queryFeatures.js';
 
 export const createHostel = async (req, res) => {
