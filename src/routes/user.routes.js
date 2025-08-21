@@ -38,7 +38,7 @@ router.get("/me", protect, getProfile);
 router.get(
   "/admin/dashboard",
   protect,
-  authorize("admin"),
+  authorize("admin", "warden"),
   (req, res) => {
     res.json({ message: "Welcome to the Admin Dashboard" });
   }
@@ -68,10 +68,10 @@ router.get("/female-zone", protect, isGender("female"), (req, res) => {
 });
 
 // ---------- USER MANAGEMENT (Admin only) ----------
-router.get("/users", protect, accessControl(["admin"]), getAllUsers);
-router.get("/users/:id", protect, accessControl(["admin"]), getUserById);
-router.put("/users/:id", protect, accessControl(["admin"]), updateUser);
-router.delete("/users/:id", protect, accessControl(["admin"]), deleteUser);
+router.get("/users", protect, accessControl(["admin", "warden"]), getAllUsers);
+router.get("/users/:id", protect, accessControl(["admin", "warden"]), getUserById);
+router.put("/users/:id", protect, accessControl(["admin", "warden"]), updateUser);
+router.delete("/users/:id", protect, accessControl(["admin", "warden"]), deleteUser);
 
 // ---------- HOSTEL MANAGEMENT (Admin only) ----------
 router.post("/hostels", protect, accessControl(["admin"]), createHostel);

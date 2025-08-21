@@ -4,8 +4,7 @@ import {
   getAllHostels,
   getHostelById
 } from '../controllers/hostel.controller.js';
-import { checkAuth, authorizeRoles } from '../middleware/authMiddleware.js';
-import { isAdminOrWarden } from '../middleware/isAdmin.js';
+import { checkAuth, authorize } from '../middleware/authMiddleware.js';
 import { isGender } from '../middleware/isGender.js';
 
 const router = express.Router();
@@ -21,9 +20,9 @@ router.get('/girls-hostel', checkAuth, isGender('female'), (req, res) => {
 /**
  * @route   POST /api/hostels
  * @desc    Create a new hostel
- * @access  Admin or Warden only
+ * @access  Admin only
  */
-router.post('/', checkAuth, isAdminOrWarden, createHostel);
+router.post('/', checkAuth, authorize('admin'), createHostel);
 
 /**
  * @route   GET /api/hostels

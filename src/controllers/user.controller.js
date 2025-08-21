@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 export const register = async (req, res) => {
-  console.log("🚀 Incoming payload:", req.body);
+  console.log("🚀 Incoming payload:", req.body.name);
   try {
     const { name, email, gender, role, password } = req.body;
 
@@ -86,7 +86,7 @@ export { login };
 
 export const getProfile = async (req, res) => {
   res.json({
-    message: `Welcome, user ${req.user.id}`,
+    message: `Welcome, user ${req.user.name}`,
     userId: req.user.id,
     role: req.user.role,
   });
