@@ -1,28 +1,32 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    email: {
+    usn: {
       type: String,
       required: true,
       unique: true,
       trim: true,
-      lowercase: true,
+      uppercase: true, // standardize USN storage
     },
-    gender: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true },
+    password: { type: String, required: true },
+
+    // Instead of ObjectId, we store USN in Room.students array
+    room: { type: mongoose.Schema.Types.ObjectId, ref: "Room" },
+
     role: {
       type: String,
-      enum: ['student', 'warden', 'admin'],
-      default: 'student',
+      enum: ["student", "warden", "admin"],
+      default: "student",
     },
-    password: { type: String, required: true },
-    isApproved: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-// 🔥 Optional: Create indexes cleanly (use only after dropping old ones)
-userSchema.index({ email: 1 }, { unique: true });
+// Make queries always lean on USN
+userSchema.index({ usn: 1 }, { unique: true });
 
-export default mongoose.model('User', userSchema);
+const User = mongoose.models.User || mongoose.model("User", userSchema);
+export default User;

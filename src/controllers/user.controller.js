@@ -1,173 +1,189 @@
-import User from '../models/User.model.js';
-import { hashPassword } from '../utils/hashPassword.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
+import Room from "../models/Room.model.js";
 
+// ======================= REGISTER =======================
 export const register = async (req, res) => {
-  console.log("🚀 Incoming payload:", req.body.name);
   try {
-    const { name, email, gender, role, password } = req.body;
+    const { name, email, password, role } = req.body;
 
-    // Validation
-    if (!name || !email || !gender || !password) {
-      return res.status(400).json({ error: 'All fields are required.' });
-    }
-
-    if (password.length < 8) {
-      return res.status(400).json({ error: 'Password too weak. Must be at least 8 characters.' });
-    }
-
-    // Check for existing user
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ error: 'Email already registered.' });
+      return res.status(400).json({ error: "User already exists" });
     }
 
-    const hashed = await hashPassword(password);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new User({
+    const user = await User.create({
       name,
       email,
-      gender,
-      role: role || 'Student',
-      password: hashed,
+      password: hashedPassword,
+      role,
+      approved: role === "warden", // auto approve warden
     });
 
-    await user.save();
-
-    res.status(201).json({ message: 'User registered successfully.' });
+    res.status(201).json({
+      message: "User registered successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        approved: user.approved,
+      },
+    });
   } catch (error) {
-    console.error('Register Error:', error);
-    res.status(500).json({ error: 'Server error. Please try again later.' });
+    console.error("Register Error:", error);
+    res.status(500).json({ error: "Failed to register user" });
   }
 };
 
-const login = async (req, res) => {
+// ======================= LOGIN =======================
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    console.log('User found:', user);
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
-    let isMatch = false;
-
-    try {
-      isMatch = await bcrypt.compare(password, user.password);
-    } catch (err) {
-      console.error('Bcrypt compare error:', err);
-      return res.status(500).json({ message: 'Encryption error' });
-    }
-
-    // 3. Now this check works correctly
-    if (!isMatch) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    // 4. The rest of your code will now execute
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: "1d" }
     );
 
-    res.json({ token });
-
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        approved: user.approved,
+      },
+    });
   } catch (error) {
-    // This will catch any other unexpected errors
-    console.error("Login function error:", error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Login Error:", error);
+    res.status(500).json({ error: "Failed to login" });
   }
 };
-export { login };
 
-export const getProfile = async (req, res) => {
-  res.json({
-    message: `Welcome, user ${req.user.name}`,
-    userId: req.user.id,
-    role: req.user.role,
-  });
-};
-
+// ======================= APPROVE STUDENT =======================
 export const approveStudentController = async (req, res) => {
   try {
-    const { studentId } = req.body;
+    const { studentId, roomNumber } = req.body;
 
-    await User.findByIdAndUpdate(studentId, { isApproved: true });
+    const student = await User.findById(studentId);
+    if (!student) return res.status(404).json({ error: "Student not found" });
 
-    res.status(200).json({ message: 'Student approved successfully' });
+    if (student.role !== "student")
+      return res.status(400).json({ error: "Only students can be approved" });
+
+    // Assign a room if provided
+    let room = null;
+    if (roomNumber) {
+      room = await Room.findOne({ roomNumber });
+      if (!room) return res.status(404).json({ error: "Room not found" });
+      student.room = room._id;
+    }
+
+    student.approved = true;
+    await student.save();
+
+    res.status(200).json({
+      message: "Student approved successfully",
+      student,
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to approve student' });
+    console.error("Approve Student Error:", error);
+    res.status(500).json({ error: "Failed to approve student" });
   }
 };
 
-
-// @desc    Get all users
-// @route   GET /api/users
-// @access  Admin only
+// ======================= GET ALL USERS =======================
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}, '-password'); // exclude password
-    res.status(200).json(users);
-  } catch (err) {
-    res.status(500).json({ message: 'Server Error' });
+    const users = await User.find().populate("room", "roomNumber");
+
+    res.status(200).json({ users });
+  } catch (error) {
+    console.error("GetAllUsers Error:", error);
+    res.status(500).json({ error: "Failed to fetch users" });
   }
 };
 
-// @desc    Get single user by ID
-// @route   GET /api/users/:id
-// @access  Admin only
-export const getUserById = async (req, res) => {
+// ======================= GET PROFILE =======================
+export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id, '-password');
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.status(200).json(user);
-  } catch (err) {
-    res.status(400).json({ message: 'Invalid ID' });
+    const user = await User.findById(req.user.id).select("-password").populate("room", "roomNumber");
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error("GetProfile Error:", error);
+    res.status(500).json({ error: "Failed to fetch profile" });
   }
 };
-// @desc    Update a user (Admin only)
-export const updateUser = async (req, res) => {
+
+// ======================= GET USER BY ID =======================
+export const getUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'Invalid user ID' });
-    }
+    const user = await User.findById(id).select("-password").populate("room", "roomNumber");
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    const user = await User.findById(id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    const updates = req.body; // { name, role, gender, etc. }
-    Object.assign(user, updates);
-    await user.save();
-
-    res.status(200).json({ message: 'User updated successfully', user });
+    res.status(200).json({ user });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error("GetUserById Error:", error);
+    res.status(500).json({ error: "Failed to fetch user" });
   }
 };
 
-// @desc    Delete a user (Admin only)
+// ======================= UPDATE USER =======================
+export const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    if (updates.password) {
+      return res.status(400).json({ error: "Password cannot be updated here" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { $set: updates },
+      { new: true, runValidators: true, select: "-password" }
+    ).populate("room", "roomNumber");
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({
+      message: "User updated successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("UpdateUser Error:", error);
+    res.status(500).json({ error: "Failed to update user" });
+  }
+};
+
+// ======================= DELETE USER =======================
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ message: 'Invalid user ID' });
-    }
+    const user = await User.findByIdAndDelete(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    const user = await User.findById(id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    await user.deleteOne();
-    res.status(200).json({ message: 'User deleted successfully' });
+    res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error("DeleteUser Error:", error);
+    res.status(500).json({ error: "Failed to delete user" });
   }
 };
-
-

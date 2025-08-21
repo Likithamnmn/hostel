@@ -1,24 +1,33 @@
-import mongoose from 'mongoose';
-const Schema = mongoose.Schema;
+import mongoose from "mongoose";
 
-const hostelSchema = new Schema({
+const hostelSchema = new mongoose.Schema(
+  {
     name: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true
+      type: String,
+      required: true,
+      trim: true,
     },
-    type: {
-        type: String,
-        enum: ['boys', 'girls'],
-        required: true
+    address: {
+      type: String,
+      required: true,
+      trim: true,
     },
-    capacity: {
-        type: Number,
-        required: true,
-        min: 1
-    }
-}, { timestamps: true });
+    rooms: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Room",
+      },
+    ],
+    warden: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  },
+  { timestamps: true }
+);
 
-const Hostel = mongoose.model('Hostel', hostelSchema);
+// ✅ Prevent OverwriteModelError
+const Hostel =
+  mongoose.models.Hostel || mongoose.model("Hostel", hostelSchema);
+
 export default Hostel;
