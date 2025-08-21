@@ -3,7 +3,7 @@ import {
   createHostel,
   getAllHostels,
   getHostelById
-} from '../controllers/hostel.Controller.js';
+} from '../controllers/hostel.controller.js';
 import { checkAuth, authorizeRoles } from '../middleware/authMiddleware.js';
 import { isAdminOrWarden } from '../middleware/isAdmin.js';
 import { isGender } from '../middleware/isGender.js';

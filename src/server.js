@@ -1,11 +1,11 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import connectDB from './config/db.js';
-import userRoutes from './routes/userRoutes.js';
-import hostelRoutes from './routes/hostelRoutes.js';
+import userRoutes from './routes/user.routes.js';
+import hostelRoutes from './routes/hostel.routes.js';
 import User from './models/User.model.js';
-import studentRoutes from './routes/studentRoutes.js';
-import authRoutes from './routes/authRoutes.js';
+import studentRoutes from './routes/student.routes.js';
+import authRoutes from './routes/auth.routes.js';
 
 
 dotenv.config();

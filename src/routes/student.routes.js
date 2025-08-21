@@ -2,7 +2,7 @@ import express from 'express';
 import { checkAuth } from '../middleware/authMiddleware.js';
 
 import { checkPermission } from '../middleware/permissions.js';
-import { approveStudentController } from '../controllers/user.Controller.js';
+import { approveStudentController } from '../controllers/user.controller.js';
 
 const router = express.Router();
 

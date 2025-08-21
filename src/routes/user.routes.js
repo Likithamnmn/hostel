@@ -5,13 +5,13 @@ import {
   getUserById,
   updateUser,
   deleteUser,
-} from "../controllers/user.Controller.js";
+} from "../controllers/user.controller.js";
 
 import {
   createHostel,
   getAllHostels,
   getHostelById,
-} from "../controllers/hostel.Controller.js";
+} from "../controllers/hostel.controller.js";
 
 import {
   verifyPayment,
